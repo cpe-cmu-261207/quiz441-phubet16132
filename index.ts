@@ -34,8 +34,11 @@ app.post('/register',
   body('password').isString(),
   body('firstname').isString(),
   body('lastname').isString(),
-  body('balance').isNumeric(),
+  body('balance').isInt(),
   (req, res) => {
+
+    if (!validationResult(req).isEmpty())
+      return res.status(400).json({ message: "Invalid data" })
 
     const { username, password, firstname, lastname, balance } = req.body
     const newUser = { username, password, firstname, lastname, balance };
@@ -43,12 +46,13 @@ app.post('/register',
     const buffer = fs.readFileSync("./db.json", { encoding: "utf-8" });
     const data = JSON.parse(buffer);
 
-    const isExistUser = data.users.find((value: { username: any }) => value.username === username);
+    const haveUser = data.users.find((value: { username: any }) => value.username === username);
 
-    if(isExistUser){
-      return res.status(400).json({
-        message: "Username is already in used"
-      })
+    if(haveUser){
+
+      res.status(400)
+      res.json({massage:'Username is already in used'})
+      return
     }
 
     data.users.push(newUser);
@@ -57,8 +61,8 @@ app.post('/register',
     return res.status(200).json({
       message: "Register successfully"
     })
+    
   })
-
 app.get('/balance',
   (req, res) => {
     const token = req.query.token as string
