@@ -3,6 +3,7 @@ import bodyParser from 'body-parser'
 import cors from 'cors'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
+import fs from 'fs'
 import { body, query, validationResult } from 'express-validator'
 
 const app = express()
@@ -29,9 +30,33 @@ app.post('/login',
   })
 
 app.post('/register',
+  body('username').isString(),
+  body('password').isString(),
+  body('firstname').isString(),
+  body('lastname').isString(),
+  body('balance').isNumeric(),
   (req, res) => {
 
     const { username, password, firstname, lastname, balance } = req.body
+    const newUser = { username, password, firstname, lastname, balance };
+
+    const buffer = fs.readFileSync("./db.json", { encoding: "utf-8" });
+    const data = JSON.parse(buffer);
+
+    const isExistUser = data.users.find((value: { username: any }) => value.username === username);
+
+    if(isExistUser){
+      return res.status(400).json({
+        message: "Username is already in used"
+      })
+    }
+
+    data.users.push(newUser);
+    fs.writeFileSync("./db.json", JSON.stringify(data));
+
+    return res.status(200).json({
+      message: "Register successfully"
+    })
   })
 
 app.get('/balance',
