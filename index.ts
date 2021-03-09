@@ -19,14 +19,34 @@ interface JWTPayload {
 }
 
 app.post('/login',
+  body('username').isString(),
+  body('password').isString(),
   (req, res) => {
+
+    if (!validationResult(req).isEmpty())
+      return res.status(400).json({ message: "Invalid username or password" })
 
     const { username, password } = req.body
     // Use username and password to create token.
+    const buffer = fs.readFileSync("./db.json", { encoding: "utf-8" });
+    const data = JSON.parse(buffer);
 
-    return res.status(200).json({
-      message: 'Login succesfully',
-    })
+    const isCompleted = data.users.find((value: 
+      { username: any; password: string }) => value.username === username 
+        && value.password === password
+    );
+
+    if (isCompleted) {
+      const token = jwt.sign({ username: isCompleted.username },SECRET);
+      return res.status(200).json({
+        message: 'Login succesfully',
+        token,
+      })
+    }
+
+      res.status(400)
+      res.json({massage:'Invalid username or password'})
+      return
   })
 
 app.post('/register',
@@ -50,7 +70,7 @@ app.post('/register',
 
     if(haveUser){
 
-      res.status(400)
+      res.status(200)
       res.json({massage:'Username is already in used'})
       return
     }
@@ -58,10 +78,10 @@ app.post('/register',
     data.users.push(newUser);
     fs.writeFileSync("./db.json", JSON.stringify(data));
 
-    return res.status(200).json({
-      message: "Register successfully"
-    })
-    
+      res.status(400)
+      res.json({massage:'Register successfully'})
+      return
+
   })
 app.get('/balance',
   (req, res) => {
